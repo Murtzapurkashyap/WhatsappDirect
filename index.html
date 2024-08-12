@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Number Scanner</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+            background-color: #add8e6; /* Light blue background */
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        p {
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            margin: 10px;
+            border-radius: 5px;
+            color: white;
+            text-decoration: none;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .green-button {
+            background-color: green;
+        }
+        .red-button {
+            background-color: red;
+        }
+        .navy-blue-button {
+            background-color: navy;
+        }
+        .yellow-button {
+            background-color: yellow;
+            color: black;
+        }
+        .youtube-button {
+            background-color: red;
+        }
+        .instagram-button {
+            background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+        }
+        .icon {
+            vertical-align: middle;
+            margin-right: 5px;
+        }
+        #scanner-container {
+            display: none;
+            margin: 20px auto;
+            width: 300px;
+            height: 300px;
+            border: 2px solid black;
+        }
+        #manual-entry {
+            margin-top: 20px;
+        }
+        #phone-input {
+            padding: 10px;
+            font-size: 16px;
+            width: 200px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Developed by: Sanjeev Kashyap</h1>
+    <p>Email Us: freehelp05@gmail.com</p>
+
+    <button class="button green-button" onclick="openScanner()">Scan WhatsApp Number</button>
+    <button class="button red-button" onclick="rescanNumber()">Rescan</button>
+    <button class="button navy-blue-button" onclick="scanOtherNumber()">Scan Other Number</button>
+
+    <br><br>
+    
+    <a href="https://youtube.com/@techntricksyoutuber?si=7xwAaJ08v-HFftV7" target="_blank" class="button youtube-button">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/4/42/YouTube_icon_%282013-2017%29.png" class="icon" alt="YouTube" width="20px">
+        Subscribe
+    </a>
+    
+    <a href="https://www.instagram.com/sanjee_kashyap?igsh=dncxczVyaW83ZDY0" target="_blank" class="button instagram-button">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png" class="icon" alt="Instagram" width="20px">
+        Follow on Instagram
+    </a>
+
+    <div id="scanner-container"></div>
+
+    <div id="manual-entry">
+        <input type="text" id="phone-input" placeholder="Enter phone number">
+        <button class="button yellow-button" onclick="goToWhatsapp()">Go on WhatsApp</button>
+    </div>
+
+    <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
+    <script>
+        let isOcrEnabled = true;
+
+        function openScanner() {
+            document.getElementById('scanner-container').style.display = 'block';
+
+            const video = document.createElement("video");
+            video.setAttribute("playsinline", "true");
+            video.setAttribute("autoplay", "true");
+            video.setAttribute("muted", "true");
+            document.getElementById("scanner-container").appendChild(video);
+
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+            .then((stream) => {
+                video.srcObject = stream;
+                video.play();
+
+                const canvas = document.createElement("canvas");
+                const context = canvas.getContext("2d");
+
+                const scanInterval = setInterval(() => {
+                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                    if (isOcrEnabled) {
+                        Tesseract.recognize(canvas, 'eng')
+                        .then(({ data: { text } }) => {
+                            let mobileNumber = text.match(/\+?[0-9]{10,15}/);
+                            if (mobileNumber) {
+                                mobileNumber = mobileNumber[0].replace(/\D/g, '');
+                                if (mobileNumber.length === 10) {
+                                    mobileNumber = `91${mobileNumber}`;  // Add country code +91 for 10-digit numbers
+                                }
+                                const whatsappUrl = `https://wa.me/+${mobileNumber}`;
+                                window.location.href = whatsappUrl;
+                                clearInterval(scanInterval);
+                                stopStream(video);
+                            }
+                        });
+                    }
+                }, 1000);
+            })
+            .catch((err) => {
+                alert("Camera access is denied or not supported. Please allow camera access in your browser or mobile settings.");
+                showPermissionInstructions();
+            });
+        }
+
+        function rescanNumber() {
+            isOcrEnabled = true;
+            openScanner();
+        }
+
+        function scanOtherNumber() {
+            isOcrEnabled = true;
+            openScanner();
+        }
+
+        function stopStream(video) {
+            let stream = video.srcObject;
+            let tracks = stream.getTracks();
+            tracks.forEach(track => track.stop());
+            video.srcObject = null;
+        }
+
+        function goToWhatsapp() {
+            let inputNumber = document.getElementById('phone-input').value;
+            let formattedNumber = inputNumber.replace(/\D/g, '');
+            if (formattedNumber.length === 10) {
+                formattedNumber = `91${formattedNumber}`;  // Add country code +91 for 10-digit numbers
+            }
+            if (formattedNumber.length >= 10 && formattedNumber.length <= 15) {
+                const whatsappUrl = `https://wa.me/+${formattedNumber}`;
+                window.location.href = whatsappUrl;
+            } else {
+                alert("Please enter a valid phone number.");
+            }
+        }
+
+        function showPermissionInstructions() {
+            alert("To enable camera access:\n\nOn mobile devices:\n1. Go to your device's settings.\n2. Find your browser app (e.g., Chrome, Safari).\n3. Ensure the camera permission is enabled.\n\nOn desktops:\n1. Click the lock icon near the URL bar.\n2. Ensure that camera access is allowed for this site.");
+        }
+    </script>
+</body>
+</html>
